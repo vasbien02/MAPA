@@ -39,7 +39,6 @@ input:focus { border-color: #1D9E75; }
 .btn-gray  { background: #f0f0f0; color: #444; font-size: 14px; }
 .btn-blue  { background: #378ADD; color: white; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .box {
   background: #f7f7f7; border-radius: 10px; padding: 11px 13px;
   font-size: 11px; color: #666; word-break: break-all;
@@ -51,10 +50,8 @@ input:focus { border-color: #1D9E75; }
   animation: spin 0.8s linear infinite; margin: 0 auto 18px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .info-card {
-  border-radius: 13px; padding: 18px; margin: 16px 0;
-  text-align: left;
+  border-radius: 13px; padding: 18px; margin: 12px 0; text-align: left;
 }
 .info-card.green { background: #e1f5ee; border: 1px solid #1D9E75; }
 .info-card.red   { background: #fde8e8; border: 1px solid #E24B4A; }
@@ -64,19 +61,24 @@ input:focus { border-color: #1D9E75; }
 .info-card.red   h3 { color: #A32D2D; }
 .info-card.amber h3 { color: #854F0B; }
 .irow {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: space-between;
   font-size: 12px; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 .irow:last-child { border-bottom: none; }
 .il { color: #666; }
-.iv { font-weight: 600; color: #1a1a1a; font-variant-numeric: tabular-nums; }
-
+.iv { font-weight: 600; color: #1a1a1a; font-variant-numeric: tabular-nums; text-align:right; max-width:200px; word-break:break-all; }
 .pulse-dot {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-  background: #1D9E75; margin-right: 6px;
-  animation: pulse 1.4s infinite;
+  background: #EF9F27; margin-right: 6px;
+  animation: blink 1.4s infinite;
 }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+#debug {
+  background: #111; color: #00ff88; border-radius: 10px;
+  padding: 12px 14px; font-size: 11px; font-family: monospace;
+  text-align: left; margin-top: 12px; line-height: 1.9;
+  word-break: break-all;
+}
 </style>
 </head>
 <body>
@@ -99,94 +101,55 @@ const FB = {
   appId: "1:254057172689:web:43dab03430cec9ecd37ff0"
 };
 
-const app = initializeApp(FB);
-const db  = getDatabase(app);
-const BASE = window.location.href.split('?')[0];
+const app    = initializeApp(FB);
+const db     = getDatabase(app);
+const BASE   = window.location.href.split('?')[0];
 const params = new URLSearchParams(window.location.search);
-const modo   = params.get('m');   // 'p' = padre
-const sesion = params.get('s');   // ID sesión
+const modo   = params.get('m');
+const sesion = params.get('s');
 
-// ══════════════════════════════════════════
-// MODO NIÑO — tiene parámetro s= pero no m=
-// ══════════════════════════════════════════
-if (sesion && modo !== 'p') {
+function addLog(msg) {
+  const d = document.getElementById('debug');
+  if (d) d.innerHTML += '▶ ' + msg + '<br>';
+  console.log(msg);
+}
+
+function showKid() {
+  const ua    = navigator.userAgent || '';
+  const isIOS = /iphone|ipad|ipod/i.test(ua);
+  const isWA  = /WhatsApp/i.test(ua);
+  const isFB  = /FBAN|FBAV|Instagram/i.test(ua);
+
+  if (isIOS && (isWA || isFB)) {
+    document.getElementById('card').innerHTML = `
+      <div class="icon">🧭</div>
+      <h1>Ábrelo en Safari</h1>
+      <p>WhatsApp en iPhone no permite GPS. Ábrelo en Safari para que funcione.</p>
+      <div class="info-card amber">
+        <h3>Pasos:</h3>
+        <div class="irow"><span class="il">1</span><span class="iv">Toca los ··· arriba a la derecha</span></div>
+        <div class="irow"><span class="il">2</span><span class="iv">Selecciona "Abrir en Safari"</span></div>
+        <div class="irow"><span class="il">3</span><span class="iv">Acepta el permiso de ubicación</span></div>
+      </div>`;
+    return;
+  }
 
   document.getElementById('card').innerHTML = `
     <div class="icon">📍</div>
     <h1>Compartir ubicación</h1>
-    <p>Tu familia quiere saber que estás bien.<br>Toca el botón para enviarles tu ubicación ahora mismo.</p>
+    <p>Tu familia quiere saber que estás bien.<br>Toca el botón y acepta el permiso de ubicación.</p>
     <button class="btn btn-green" id="share-btn" onclick="doShare()">📍 Enviar mi ubicación</button>
     <div id="kid-msg"></div>
+    <div id="debug">▶ Listo. Toca el botón.<br>▶ iOS: ${isIOS ? 'SÍ' : 'NO'} | HTTPS: ${location.protocol === 'https:' ? 'SÍ' : 'NO'}<br></div>
   `;
-
-  window.doShare = function() {
-    const btn = document.getElementById('share-btn');
-    const msg = document.getElementById('kid-msg');
-    btn.disabled = true;
-    btn.textContent = '⏳ Obteniendo GPS...';
-
-    if (!navigator.geolocation) {
-      btn.disabled = false;
-      btn.textContent = '📍 Enviar mi ubicación';
-      msg.innerHTML = `<div class="info-card red"><h3>GPS no disponible</h3><p style="font-size:12px;color:#777">Abre este link en Safari (iPhone) o Chrome (Android).</p></div>`;
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const acc = Math.round(pos.coords.accuracy);
-
-        // Guardar en Firebase
-        set(ref(db, 'loc/' + sesion), {
-          lat, lng, acc, ts: Date.now(), ok: true
-        }).then(() => {
-          msg.innerHTML = `
-            <div class="info-card green">
-              <h3>✅ ¡Ubicación enviada!</h3>
-              <div class="irow"><span class="il">Latitud</span><span class="iv">${lat.toFixed(5)}</span></div>
-              <div class="irow"><span class="il">Longitud</span><span class="iv">${lng.toFixed(5)}</span></div>
-              <div class="irow"><span class="il">Precisión</span><span class="iv">${acc} m</span></div>
-            </div>`;
-          btn.textContent = '✅ Enviado';
-
-          // Redirigir a Google Maps después de 1.5s
-          setTimeout(() => {
-            window.location.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
-          }, 1500);
-
-        }).catch(() => {
-          btn.disabled = false;
-          btn.textContent = '📍 Enviar mi ubicación';
-          msg.innerHTML = `<div class="info-card red"><h3>Error al enviar</h3><p style="font-size:12px;color:#777">Comprueba tu conexión a internet e inténtalo de nuevo.</p></div>`;
-        });
-      },
-      err => {
-        btn.disabled = false;
-        btn.textContent = '📍 Enviar mi ubicación';
-        const msgs = {
-          1: 'Permiso denegado.<br><b>iPhone:</b> Ajustes → Safari → Ubicación → Permitir.<br><b>Android:</b> toca el icono del candado en la barra del navegador.',
-          2: 'GPS no disponible. Activa la ubicación en tu móvil.',
-          3: 'Tiempo de espera agotado. Inténtalo de nuevo.'
-        };
-        msg.innerHTML = `<div class="info-card red"><h3>No se pudo obtener la ubicación</h3><p style="font-size:12px;color:#777;line-height:1.6">${msgs[err.code]||'Error desconocido ('+err.code+')'}</p></div>`;
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  };
 }
 
-// ══════════════════════════════════════════
-// MODO PADRE — genera links y escucha GPS
-// ══════════════════════════════════════════
-else {
-
+function showDad() {
   const savedName = localStorage.getItem('dad-name') || '';
   document.getElementById('card').innerHTML = `
     <div class="icon">🛡️</div>
     <h1>FamiliaSegura</h1>
-    <p>Escribe tu nombre, genera el link y envíaselo al niño por WhatsApp. Cuando lo abra y acepte el GPS, su ubicación aparece aquí automáticamente.</p>
+    <p>Escribe tu nombre, genera el link y envíaselo al niño por WhatsApp. Su ubicación aparecerá aquí automáticamente cuando lo abra.</p>
     <input type="text" id="name-inp" placeholder="Tu nombre (Papá / Mamá)" value="${savedName}">
     <button class="btn btn-green" onclick="generate()">🔗 Generar link</button>
     <div id="link-area" style="display:none">
@@ -196,74 +159,169 @@ else {
     </div>
     <div id="dad-state"></div>
   `;
-
-  let currentSid  = null;
-  let unsubscribe = null;
-
-  window.generate = function() {
-    const name = (document.getElementById('name-inp').value || 'Tu familia').trim();
-    localStorage.setItem('dad-name', name);
-
-    // Generar ID único
-    currentSid = 'fs' + Date.now().toString(36) + Math.random().toString(36).substr(2,4);
-
-    const link = BASE + '?s=' + currentSid;
-    document.getElementById('link-txt').textContent = link;
-    document.getElementById('link-area').style.display = 'block';
-
-    // Mostrar estado esperando
-    document.getElementById('dad-state').innerHTML = `
-      <div class="info-card amber">
-        <h3><span class="pulse-dot"></span>Esperando al niño...</h3>
-        <p style="font-size:12px;color:#777;line-height:1.6">Cuando el niño abra el link y acepte el GPS, su ubicación aparecerá aquí automáticamente.</p>
-      </div>`;
-
-    // Escuchar Firebase en tiempo real
-    if (unsubscribe) unsubscribe();
-    const locRef = ref(db, 'loc/' + currentSid);
-    unsubscribe = onValue(locRef, snap => {
-      const data = snap.val();
-      if (!data || !data.ok || !data.lat) return;
-
-      const t = new Date(data.ts);
-      const timeStr = t.getHours().toString().padStart(2,'0') + ':' +
-                      t.getMinutes().toString().padStart(2,'0') + ':' +
-                      t.getSeconds().toString().padStart(2,'0');
-      const mapsUrl = 'https://www.google.com/maps?q=' + data.lat + ',' + data.lng;
-
-      document.getElementById('dad-state').innerHTML = `
-        <div class="info-card green">
-          <h3>✅ ¡Ubicación recibida!</h3>
-          <div class="irow"><span class="il">Latitud</span><span class="iv">${data.lat.toFixed(6)}</span></div>
-          <div class="irow"><span class="il">Longitud</span><span class="iv">${data.lng.toFixed(6)}</span></div>
-          <div class="irow"><span class="il">Precisión</span><span class="iv">${data.acc} m</span></div>
-          <div class="irow"><span class="il">Hora</span><span class="iv">${timeStr}</span></div>
-        </div>
-        <a href="${mapsUrl}" target="_blank" style="text-decoration:none">
-          <button class="btn btn-green">🗺️ Ver en Google Maps</button>
-        </a>
-        <button class="btn btn-blue" onclick="generate()">🔄 Pedir nueva ubicación</button>`;
-    });
-  };
-
-  window.sendWA = function() {
-    const name = localStorage.getItem('dad-name') || 'Tu familia';
-    const link = document.getElementById('link-txt').textContent;
-    const msg  = '😊 ' + name + ' quiere saber que estás bien. Toca aquí: ' + link;
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-  };
-
-  window.copyLink = function() {
-    const link = document.getElementById('link-txt').textContent;
-    navigator.clipboard.writeText(link)
-      .then(() => {
-        const btn = event.target;
-        btn.textContent = '✅ Copiado';
-        setTimeout(() => btn.textContent = '📋 Copiar link', 2000);
-      })
-      .catch(() => prompt('Copia este link:', link));
-  };
 }
+
+// ── Decidir qué mostrar ─────────────────────────────────
+if (sesion && modo !== 'p') {
+  showKid();
+} else {
+  showDad();
+}
+
+// ══════════════════════════════════════════
+// FUNCIONES NIÑO
+// ══════════════════════════════════════════
+window.doShare = function() {
+  const btn = document.getElementById('share-btn');
+  const msg = document.getElementById('kid-msg');
+  btn.disabled = true;
+  btn.textContent = '⏳ Esperando permiso GPS...';
+  addLog('Solicitando GPS...');
+
+  if (!navigator.geolocation) {
+    addLog('ERROR: geolocation no disponible en este navegador');
+    btn.disabled = false;
+    btn.textContent = '📍 Enviar mi ubicación';
+    msg.innerHTML = `<div class="info-card red"><h3>GPS no disponible</h3>
+      <p style="font-size:12px;color:#777">iPhone: usa Safari. Android: usa Chrome.</p></div>`;
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      onGPS(pos);
+    },
+    function(err) {
+      addLog('Error GPS alta precisión: código ' + err.code + ' — ' + err.message);
+      addLog('Intentando con baja precisión...');
+      navigator.geolocation.getCurrentPosition(
+        function(pos) { onGPS(pos); },
+        function(err2) {
+          addLog('Error GPS baja precisión: código ' + err2.code + ' — ' + err2.message);
+          const btn2 = document.getElementById('share-btn');
+          const msg2 = document.getElementById('kid-msg');
+          const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+          btn2.disabled = false;
+          btn2.textContent = '🔄 Reintentar';
+          const errTexts = {
+            1: isIOS
+              ? 'Permiso denegado. Ve a Ajustes del iPhone → Privacidad y seguridad → Servicios de localización → Safari → "Al usar la app".'
+              : 'Permiso denegado. Toca el candado 🔒 en la barra del navegador y permite la ubicación.',
+            2: 'GPS no disponible. Activa los Servicios de Localización en tu móvil.',
+            3: 'Tiempo de espera agotado. Asegúrate de tener GPS activo e inténtalo de nuevo.'
+          };
+          msg2.innerHTML = `<div class="info-card red">
+            <h3>Error ${err2.code}</h3>
+            <p style="font-size:13px;color:#555;line-height:1.7">${errTexts[err2.code] || 'Error desconocido.'}</p>
+          </div>`;
+        },
+        { enableHighAccuracy: false, timeout: 30000, maximumAge: 120000 }
+      );
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+  );
+};
+
+function onGPS(pos) {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const acc = Math.round(pos.coords.accuracy);
+  addLog('GPS OK: ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' ±' + acc + 'm');
+
+  const btn = document.getElementById('share-btn');
+  const msg = document.getElementById('kid-msg');
+  btn.textContent = '📡 Enviando a Firebase...';
+
+  set(ref(db, 'loc/' + sesion), {
+    lat: lat, lng: lng, acc: acc, ts: Date.now(), ok: true
+  }).then(function() {
+    addLog('Firebase OK');
+    msg.innerHTML = `<div class="info-card green">
+      <h3>✅ ¡Ubicación enviada!</h3>
+      <div class="irow"><span class="il">Latitud</span><span class="iv">${lat.toFixed(5)}</span></div>
+      <div class="irow"><span class="il">Longitud</span><span class="iv">${lng.toFixed(5)}</span></div>
+      <div class="irow"><span class="il">Precisión</span><span class="iv">±${acc} m</span></div>
+    </div>
+    <p style="font-size:12px;color:#888;margin-top:4px">Abriendo Google Maps en 2 segundos...</p>`;
+    btn.textContent = '✅ Enviado';
+    setTimeout(function() {
+      window.location.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+    }, 2000);
+  }).catch(function(e) {
+    addLog('Firebase ERROR: ' + e.message);
+    msg.innerHTML = `<div class="info-card amber">
+      <h3>⚠️ GPS obtenido pero no enviado</h3>
+      <p style="font-size:12px;color:#777;margin-bottom:8px">Error Firebase: ${e.message}</p>
+      <div class="irow"><span class="il">Lat</span><span class="iv">${lat.toFixed(5)}</span></div>
+      <div class="irow"><span class="il">Lng</span><span class="iv">${lng.toFixed(5)}</span></div>
+    </div>`;
+    btn.disabled = false;
+    btn.textContent = '🔄 Reintentar envío';
+  });
+}
+
+// ══════════════════════════════════════════
+// FUNCIONES PADRE
+// ══════════════════════════════════════════
+window.generate = function() {
+  const nameEl = document.getElementById('name-inp');
+  const name   = (nameEl ? nameEl.value : 'Tu familia').trim() || 'Tu familia';
+  localStorage.setItem('dad-name', name);
+
+  const sid  = 'fs' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+  const link = BASE + '?s=' + sid;
+
+  document.getElementById('link-txt').textContent    = link;
+  document.getElementById('link-area').style.display = 'block';
+  document.getElementById('dad-state').innerHTML     = `
+    <div class="info-card amber">
+      <h3><span class="pulse-dot"></span>Esperando al niño...</h3>
+      <p style="font-size:12px;color:#777;line-height:1.6">
+        Cuando abra el link y acepte el GPS, la ubicación aparecerá aquí automáticamente.
+      </p>
+    </div>`;
+
+  onValue(ref(db, 'loc/' + sid), function(snap) {
+    const data = snap.val();
+    if (!data || !data.ok || !data.lat) return;
+    const t       = new Date(data.ts);
+    const hh      = t.getHours().toString().padStart(2, '0');
+    const mm      = t.getMinutes().toString().padStart(2, '0');
+    const ss      = t.getSeconds().toString().padStart(2, '0');
+    const timeStr = hh + ':' + mm + ':' + ss;
+    const mapsUrl = 'https://www.google.com/maps?q=' + data.lat + ',' + data.lng;
+    document.getElementById('dad-state').innerHTML = `
+      <div class="info-card green">
+        <h3>✅ ¡Ubicación recibida!</h3>
+        <div class="irow"><span class="il">Latitud</span><span class="iv">${data.lat.toFixed(6)}</span></div>
+        <div class="irow"><span class="il">Longitud</span><span class="iv">${data.lng.toFixed(6)}</span></div>
+        <div class="irow"><span class="il">Precisión</span><span class="iv">±${data.acc} m</span></div>
+        <div class="irow"><span class="il">Hora</span><span class="iv">${timeStr}</span></div>
+      </div>
+      <a href="${mapsUrl}" target="_blank" style="text-decoration:none">
+        <button class="btn btn-green">🗺️ Ver en Google Maps</button>
+      </a>
+      <button class="btn btn-blue" onclick="generate()" style="margin-top:0">🔄 Pedir nueva ubicación</button>`;
+  });
+};
+
+window.sendWA = function() {
+  const name = localStorage.getItem('dad-name') || 'Tu familia';
+  const link = document.getElementById('link-txt').textContent;
+  const msg  = '😊 ' + name + ' quiere saber que estás bien. Toca aquí 👉 ' + link;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+};
+
+window.copyLink = function() {
+  const link = document.getElementById('link-txt').textContent;
+  navigator.clipboard.writeText(link)
+    .then(function() {
+      const btn = event.target;
+      btn.textContent = '✅ Copiado';
+      setTimeout(function() { btn.textContent = '📋 Copiar link'; }, 2000);
+    })
+    .catch(function() { prompt('Copia este link:', link); });
+};
 </script>
 </body>
 </html>
