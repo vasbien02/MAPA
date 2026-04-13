@@ -2,642 +2,254 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FamiliaSegura 📍</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi ubicación</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; min-height: 100vh; }
-
-/* ══ AVISO ABRIR EN SAFARI ══ */
-#safari-gate {
-  display: none;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
-  flex-direction: column;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 30px 24px;
-  background: #0a0a0a;
+  background: #f0f4f0;
+  padding: 24px;
+}
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   text-align: center;
 }
-.sg-icon { font-size: 56px; margin-bottom: 20px; }
-.sg-title { font-size: 20px; font-weight: 700; color: white; margin-bottom: 10px; }
-.sg-body  { font-size: 14px; color: #aaa; line-height: 1.7; margin-bottom: 28px; }
-.sg-steps {
-  background: #1a1a1a; border-radius: 16px;
-  padding: 20px; width: 100%; max-width: 360px;
-  margin-bottom: 24px; text-align: left;
-}
-.sg-step {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid #2a2a2a;
-}
-.sg-step:last-child { border-bottom: none; }
-.sg-num {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: #1D9E75; color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
-}
-.sg-step-text { font-size: 13px; color: #ccc; line-height: 1.5; padding-top: 4px; }
-.sg-step-text strong { color: white; }
-.open-safari-btn {
-  width: 100%; max-width: 360px;
+.icon { font-size: 52px; margin-bottom: 16px; }
+h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+p  { font-size: 14px; color: #777; line-height: 1.6; margin-bottom: 24px; }
+.btn {
+  display: block; width: 100%;
   padding: 16px; border-radius: 14px; border: none;
-  background: #1D9E75; color: white;
   font-size: 16px; font-weight: 700; cursor: pointer;
+  margin-bottom: 12px; transition: opacity 0.2s;
 }
+.btn:active { opacity: 0.8; }
+.btn-green { background: #1D9E75; color: white; }
+.btn-wa    { background: #25D366; color: white; }
+.btn-copy  { background: #f0f0f0; color: #333; font-size: 14px; }
 
-/* ══ VISTA NIÑO ══ */
-#kid-view {
+.link-box {
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #555;
+  word-break: break-all;
+  margin-bottom: 12px;
   display: none;
-  min-height: 100vh;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 20px;
-  background: #0a0a0a;
-}
-.from-badge {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 18px; background: #1a1a1a;
-  border-radius: 30px; padding: 6px 14px 6px 8px;
-}
-.from-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: #1D9E75;
-  display: flex; align-items: center; justify-content: center; font-size: 16px;
-}
-.from-text { font-size: 13px; color: #ccc; }
-.from-text strong { color: white; }
-
-.photo-card {
-  width: 100%; max-width: 400px;
-  border-radius: 20px; overflow: hidden;
-  box-shadow: 0 10px 50px rgba(0,0,0,0.7);
-}
-.photo-area {
-  width: 100%; aspect-ratio: 1/1;
-  position: relative; overflow: hidden; cursor: pointer;
-}
-.photo-area svg { width: 100%; height: 100%; display: block; }
-.tap-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.88));
-  padding: 50px 20px 22px;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.tap-pulse {
-  width: 66px; height: 66px; border-radius: 50%;
-  background: #25D366;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px; position: relative;
-}
-.tap-pulse::before, .tap-pulse::after {
-  content: ''; position: absolute; border-radius: 50%;
-  border: 2px solid #25D366; animation: ripple 1.8s infinite;
-}
-.tap-pulse::before { width: 82px; height: 82px; animation-delay: 0s; }
-.tap-pulse::after  { width: 104px; height: 104px; animation-delay: 0.45s; }
-@keyframes ripple { 0%{transform:scale(0.8);opacity:0.8} 100%{transform:scale(1.45);opacity:0} }
-.tap-label    { font-size: 15px; font-weight: 700; color: white; text-align: center; }
-.tap-sublabel { font-size: 12px; color: rgba(255,255,255,0.65); text-align: center; }
-.photo-caption { background: #111; padding: 14px 16px 18px; }
-.cap-sender { font-size: 13px; font-weight: 700; color: white; margin-bottom: 4px; }
-.cap-msg    { font-size: 13px; color: #bbb; line-height: 1.5; }
-.cap-time   { font-size: 11px; color: #555; margin-top: 6px; }
-
-#kid-sending {
-  display: none; margin-top: 22px;
-  width: 100%; max-width: 400px;
-  background: #1a1a1a; border-radius: 14px;
-  padding: 22px; text-align: center;
+  text-align: left;
+  border: 1px solid #e8e8e8;
 }
 .spin {
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 3px solid #333; border-top-color: #25D366;
-  animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 4px solid #e0e0e0; border-top-color: #1D9E75;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-#kid-sending p { font-size: 13px; color: #888; }
-
-#kid-sent {
-  display: none; margin-top: 22px;
-  width: 100%; max-width: 400px;
-  background: #0d1f0f; border: 1px solid #25D366;
-  border-radius: 14px; padding: 24px 20px; text-align: center;
-}
-#kid-sent .ck { font-size: 48px; margin-bottom: 10px; }
-#kid-sent h3  { font-size: 17px; font-weight: 700; color: #25D366; margin-bottom: 6px; }
-#kid-sent p   { font-size: 13px; color: #888; line-height: 1.5; }
-
-#kid-error {
-  display: none; margin-top: 22px;
-  width: 100%; max-width: 400px;
-  background: #1f0d0d; border: 1px solid #E24B4A;
-  border-radius: 14px; padding: 20px; text-align: center;
-}
-#kid-error h3 { font-size: 15px; color: #E24B4A; margin-bottom: 8px; }
-#kid-error p  { font-size: 12px; color: #999; margin-bottom: 14px; line-height: 1.6; }
-#kid-error button {
-  padding: 10px 22px; border-radius: 10px;
-  background: #E24B4A; color: white;
-  border: none; font-size: 14px; font-weight: 600; cursor: pointer;
-}
-
-/* ══ VISTA PADRE ══ */
-#dad-view {
-  display: none; flex-direction: column; height: 100vh; background: #f0f4f0;
-}
-#dad-topbar {
-  background: white; padding: 11px 16px;
-  display: flex; align-items: center; gap: 10px;
-  border-bottom: 1px solid #e8e8e8; flex-shrink: 0;
-  flex-wrap: wrap; z-index: 1000;
-}
-.dlogo { font-size: 16px; font-weight: 700; color: #1D9E75; }
-.dsp   { flex: 1; }
-#dad-name {
-  padding: 7px 10px; border: 1px solid #ddd;
-  border-radius: 8px; font-size: 13px; width: 130px;
-}
-#dad-name:focus { outline: none; border-color: #1D9E75; }
-.gen-btn {
-  padding: 7px 13px; background: #1D9E75; color: white;
-  border: none; border-radius: 8px; font-size: 13px;
-  font-weight: 600; cursor: pointer; white-space: nowrap;
-}
-.gen-btn:hover { background: #0F6E56; }
-#dad-status { display: flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
-.sdot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
-.sdot.green { background: #1D9E75; animation: blink 1.5s infinite; }
-.sdot.amber { background: #EF9F27; animation: blink 0.9s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
-
-#dad-main { display: flex; flex: 1; overflow: hidden; }
-#map { flex: 1; z-index: 1; }
-
-#dad-sidebar {
-  width: 265px; background: white;
-  border-left: 1px solid #e8e8e8;
-  display: flex; flex-direction: column;
-  overflow: hidden; flex-shrink: 0;
-}
-#sb-scroll { flex: 1; overflow-y: auto; padding: 14px; }
-.sec { font-size: 10px; font-weight: 700; color: #bbb;
-       text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 7px; }
-
-.child-card {
-  background: #f2fdf7; border: 1px solid #b8e6d0;
-  border-radius: 12px; padding: 14px; margin-bottom: 12px;
-}
-.cc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.cc-av {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: #1D9E75; display: flex; align-items: center;
-  justify-content: center; font-size: 20px; flex-shrink: 0;
-}
-.cc-nm  { font-size: 15px; font-weight: 700; color: #1a1a1a; }
-.cc-st  { font-size: 12px; color: #1D9E75; }
-.cc-st.w { color: #999; }
-.irow { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #e5f7ed; }
-.irow:last-child { border-bottom: none; }
-.il { font-size: 12px; color: #777; }
-.iv { font-size: 12px; font-weight: 600; color: #1a1a1a; font-variant-numeric: tabular-nums; text-align: right; max-width: 150px; }
-
-#log-list { list-style: none; }
-#log-list li { font-size: 12px; padding: 5px 0; border-bottom: 1px solid #f2f2f2; display: flex; gap: 6px; }
-#log-list li:last-child { border-bottom: none; }
-.lt { color: #ccc; flex-shrink: 0; min-width: 38px; }
-.lm { color: #555; }
-
-#sb-footer { padding: 12px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 7px; }
-.ab { padding: 9px; border-radius: 9px; border: 1px solid #e0e0e0; background: #f5f5f5; font-size: 13px; font-weight: 500; cursor: pointer; }
-.ab:hover { background: #eee; }
-.ab.g { background: #e1f5ee; border-color: #b8e6d0; color: #0F6E56; font-weight: 700; }
-.ab.g:hover { background: #d0f0e4; }
-
-#dad-waiting {
-  padding: 24px 16px; text-align: center;
-  display: flex; flex-direction: column; align-items: center;
-}
-#dad-waiting .wi { font-size: 44px; margin-bottom: 14px; }
-#dad-waiting h2  { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
-#dad-waiting p   { font-size: 12px; color: #888; line-height: 1.6; }
-.link-box {
-  background: #e1f5ee; border-radius: 10px; padding: 10px 12px;
-  margin: 12px 0; font-size: 11px; font-weight: 600; color: #0F6E56;
-  word-break: break-all; text-align: left; border: 1px dashed #1D9E75;
-  width: 100%;
-}
-
-@media (max-width: 600px) {
-  #dad-sidebar { width: 100%; max-height: 42vh; border-left: none; border-top: 1px solid #eee; }
-  #dad-main { flex-direction: column; }
+.tag {
+  display: inline-block;
+  background: #e1f5ee; color: #0F6E56;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px;
+  margin-bottom: 20px;
 }
 </style>
 </head>
 <body>
-
-<!-- ══ AVISO: ABRIR EN SAFARI ══ -->
-<div id="safari-gate">
-  <div class="sg-icon">🧭</div>
-  <div class="sg-title">Ábrelo en Safari</div>
-  <div class="sg-body">WhatsApp no permite acceder al GPS en iPhone.<br>Necesitas abrirlo en Safari para que funcione.</div>
-  <div class="sg-steps">
-    <div class="sg-step">
-      <div class="sg-num">1</div>
-      <div class="sg-step-text">Toca el icono <strong>⋯</strong> o <strong>···</strong> arriba a la derecha en WhatsApp</div>
-    </div>
-    <div class="sg-step">
-      <div class="sg-num">2</div>
-      <div class="sg-step-text">Selecciona <strong>"Abrir en Safari"</strong></div>
-    </div>
-    <div class="sg-step">
-      <div class="sg-num">3</div>
-      <div class="sg-step-text">En Safari toca la foto y acepta el permiso de ubicación</div>
-    </div>
-  </div>
-  <button class="open-safari-btn" onclick="tryOpenSafari()">Abrir en Safari ahora</button>
-</div>
-
-<!-- ══ VISTA NIÑO ══ -->
-<div id="kid-view">
-  <div class="from-badge">
-    <div class="from-avatar">👨</div>
-    <div class="from-text"><strong id="sender-name">Papá</strong> te ha enviado una foto</div>
-  </div>
-
-  <div class="photo-card">
-    <div class="photo-area" id="photo-tap" onclick="requestLocation()">
-      <!-- Paisaje SVG atardecer -->
-      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stop-color="#0d0d2b"/>
-            <stop offset="35%" stop-color="#b5320a"/>
-            <stop offset="65%" stop-color="#e8711a"/>
-            <stop offset="100%" stop-color="#f5b942"/>
-          </linearGradient>
-          <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stop-color="#c0581a" stop-opacity="0.55"/>
-            <stop offset="100%" stop-color="#050510"/>
-          </linearGradient>
-        </defs>
-        <rect width="400" height="400" fill="url(#sky)"/>
-        <!-- Sol -->
-        <circle cx="200" cy="196" r="30" fill="#fcd34d" opacity="0.95"/>
-        <circle cx="200" cy="196" r="44" fill="#fcd34d" opacity="0.18"/>
-        <circle cx="200" cy="196" r="58" fill="#fcd34d" opacity="0.08"/>
-        <!-- Montañas traseras -->
-        <polygon points="0,265 70,185 130,220 190,165 250,205 310,155 370,195 400,175 400,275 0,275" fill="#1e2d3d" opacity="0.85"/>
-        <!-- Montañas delanteras -->
-        <polygon points="0,292 90,215 165,255 225,202 305,245 375,205 400,225 400,305 0,305" fill="#111c26"/>
-        <!-- Agua -->
-        <rect x="0" y="302" width="400" height="98" fill="url(#sea)"/>
-        <!-- Reflejo sol -->
-        <ellipse cx="200" cy="344" rx="16" ry="42" fill="#fcd34d" opacity="0.3"/>
-        <!-- Ondas -->
-        <line x1="95"  y1="322" x2="158" y2="322" stroke="#fcd34d" stroke-width="1" opacity="0.25"/>
-        <line x1="242" y1="322" x2="305" y2="322" stroke="#fcd34d" stroke-width="1" opacity="0.25"/>
-        <line x1="78"  y1="338" x2="152" y2="338" stroke="#fcd34d" stroke-width="1" opacity="0.18"/>
-        <line x1="248" y1="338" x2="322" y2="338" stroke="#fcd34d" stroke-width="1" opacity="0.18"/>
-        <!-- Estrellas -->
-        <circle cx="35"  cy="38"  r="1.4" fill="white" opacity="0.75"/>
-        <circle cx="88"  cy="18"  r="1"   fill="white" opacity="0.6"/>
-        <circle cx="145" cy="48"  r="1.4" fill="white" opacity="0.7"/>
-        <circle cx="315" cy="28"  r="1"   fill="white" opacity="0.8"/>
-        <circle cx="362" cy="52"  r="1.4" fill="white" opacity="0.6"/>
-        <circle cx="385" cy="18"  r="1"   fill="white" opacity="0.7"/>
-        <circle cx="22"  cy="78"  r="1"   fill="white" opacity="0.5"/>
-        <circle cx="335" cy="75"  r="1"   fill="white" opacity="0.6"/>
-        <!-- Luna -->
-        <circle cx="322" cy="58" r="16" fill="#fef9c3" opacity="0.88"/>
-        <circle cx="330" cy="53" r="13" fill="#0d0d2b" opacity="0.65"/>
-        <!-- Pinos izq -->
-        <polygon points="28,305 40,264 52,305"  fill="#060e06"/>
-        <polygon points="46,305 60,252 74,305"  fill="#060e06"/>
-        <polygon points="14,305 24,274 34,305"  fill="#060e06"/>
-        <!-- Pinos der -->
-        <polygon points="332,305 344,262 356,305" fill="#060e06"/>
-        <polygon points="350,305 364,250 378,305" fill="#060e06"/>
-        <polygon points="370,305 380,270 390,305" fill="#060e06"/>
-      </svg>
-
-      <div class="tap-overlay">
-        <div class="tap-pulse">📍</div>
-        <div class="tap-label">Toca para compartir tu ubicación</div>
-        <div class="tap-sublabel">Tu familia sabrá que estás bien</div>
-      </div>
-    </div>
-
-    <div class="photo-caption">
-      <div class="cap-sender" id="cap-sender">Papá</div>
-      <div class="cap-msg" id="cap-msg">¡Hola! Toca la foto para que sepa que estás bien 😊</div>
-      <div class="cap-time" id="cap-time">Ahora</div>
-    </div>
-  </div>
-
-  <div id="kid-sending">
+<div class="card" id="card">
+  <!-- Estado inicial: cargando -->
+  <div id="state-loading">
     <div class="spin"></div>
-    <p>Obteniendo tu ubicación GPS…<br>Solo un momento</p>
-  </div>
-
-  <div id="kid-sent">
-    <div class="ck">✅</div>
-    <h3>¡Ubicación enviada!</h3>
-    <p>Tu familia ya sabe dónde estás.<br>Todo está bien 😊</p>
-  </div>
-
-  <div id="kid-error">
-    <h3>No se pudo obtener la ubicación</h3>
-    <p id="err-msg">Activa el GPS e intenta de nuevo.</p>
-    <button onclick="requestLocation()">Intentar de nuevo</button>
+    <p>Detectando ubicación...</p>
   </div>
 </div>
 
-<!-- ══ VISTA PADRE ══ -->
-<div id="dad-view">
-  <div id="dad-topbar">
-    <div class="dlogo">🛡 FamiliaSegura</div>
-    <div class="dsp"></div>
-    <input type="text" id="dad-name" placeholder="Tu nombre" value="Papá">
-    <button class="gen-btn" id="gen-btn" onclick="generateLink()">📤 Generar y enviar</button>
-    <div id="dad-status">
-      <div class="sdot" id="sdot"></div>
-      <span id="stext">Esperando...</span>
-    </div>
-  </div>
+<script>
+const params    = new URLSearchParams(window.location.search);
+const modo      = params.get('modo');   // 'padre' o vacío
+const sesion    = params.get('s');      // ID de sesión
 
-  <div id="dad-main">
-    <div id="map"></div>
-    <div id="dad-sidebar">
+// Firebase config
+const FB_URL = 'https://mapapapa-30bb4-default-rtdb.europe-west1.firebasedatabase.app';
 
-      <div id="dad-waiting">
-        <div class="wi">📤</div>
-        <h2>Genera el link</h2>
-        <p>Pulsa el botón arriba. Se abrirá WhatsApp con el link listo para enviar al niño.</p>
-        <div class="link-box" id="link-box">El link aparecerá aquí</div>
-        <p style="font-size:11px;color:#aaa;line-height:1.6">El niño verá una foto bonita con el botón de compartir ubicación</p>
-      </div>
-
-      <div id="dad-info" style="display:none;flex-direction:column;flex:1;overflow:hidden">
-        <div id="sb-scroll">
-          <div class="child-card">
-            <div class="cc-head">
-              <div class="cc-av">👦</div>
-              <div>
-                <div class="cc-nm" id="cc-nm">—</div>
-                <div class="cc-st" id="cc-st">Esperando GPS...</div>
-              </div>
-            </div>
-            <div class="irow"><span class="il">Latitud</span><span class="iv" id="iv-lat">—</span></div>
-            <div class="irow"><span class="il">Longitud</span><span class="iv" id="iv-lng">—</span></div>
-            <div class="irow"><span class="il">Precisión</span><span class="iv" id="iv-acc">—</span></div>
-            <div class="irow"><span class="il">Hora</span><span class="iv" id="iv-time">—</span></div>
-            <div class="irow"><span class="il">Dirección</span><span class="iv" id="iv-addr">Buscando...</span></div>
-          </div>
-          <div class="sec">Registro</div>
-          <ul id="log-list"></ul>
-        </div>
-        <div id="sb-footer">
-          <button class="ab g" onclick="generateLink()">📤 Enviar nueva foto</button>
-          <button class="ab"   onclick="centerChild()">🎯 Centrar en el mapa</button>
-          <button class="ab"   onclick="openGoogleMaps()">🗺️ Abrir en Google Maps</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCICKKk1JZXSsjL7yWxkSSt-a97z2eRyzc",
-  authDomain: "mapapapa-30bb4.firebaseapp.com",
-  databaseURL: "https://mapapapa-30bb4-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "mapapapa-30bb4",
-  storageBucket: "mapapapa-30bb4.firebasestorage.app",
-  messagingSenderId: "254057172689",
-  appId: "1:254057172689:web:43dab03430cec9ecd37ff0"
-};
-
-const fbApp = initializeApp(firebaseConfig);
-const db    = getDatabase(fbApp);
-
-const params     = new URLSearchParams(window.location.search);
-const mode       = params.get('modo');
-const sessionId  = params.get('sesion');
-const senderName = params.get('de') || 'Papá';
-
-// ── Detectar navegador interno de WhatsApp en iPhone ──
-const ua = navigator.userAgent || '';
-const isIOS        = /iphone|ipad|ipod/i.test(ua);
-const isWhatsAppBrowser = /WhatsApp/i.test(ua);
-const isFBBrowser  = /FBAN|FBAV|Instagram/i.test(ua);
-const isInAppBrowser = isWhatsAppBrowser || isFBBrowser;
-
-// ── MODO NIÑO ────────────────────────────────────────
-if (mode !== 'padre') {
-
-  // Si es iPhone dentro de WhatsApp → mostrar aviso Safari
-  if (isIOS && isInAppBrowser) {
-    document.getElementById('safari-gate').style.display = 'flex';
+// ════════════════════════════════
+// MODO NIÑO — alguien abrió el link
+// ════════════════════════════════
+if (!modo && sesion) {
+  // Pedir GPS directamente
+  if (!navigator.geolocation) {
+    showError('Tu navegador no soporta GPS. Abre este link en Safari o Chrome.');
   } else {
-    document.getElementById('kid-view').style.display = 'flex';
-    document.getElementById('sender-name').textContent  = senderName;
-    document.getElementById('cap-sender').textContent   = senderName;
-    const now = new Date();
-    document.getElementById('cap-time').textContent =
-      now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-  }
-
-  window.tryOpenSafari = function() {
-    // Redirigir a Safari usando el scheme de iOS
-    const url = window.location.href;
-    window.location.href = url; // en Safari funciona directo
-    // Fallback: intentar abrir con x-safari
-    setTimeout(() => {
-      window.location.href = 'x-safari-' + url;
-    }, 300);
-  };
-
-  window.requestLocation = function() {
-    if (!sessionId) {
-      document.getElementById('err-msg').textContent = 'Link inválido. Pide a tu padre que genere un nuevo link.';
-      document.getElementById('kid-error').style.display = 'block';
-      return;
-    }
-    if (!navigator.geolocation) {
-      document.getElementById('err-msg').textContent = 'Tu navegador no soporta GPS. Usa Safari en iPhone.';
-      document.getElementById('kid-error').style.display = 'block';
-      return;
-    }
-
-    document.getElementById('kid-sending').style.display  = 'block';
-    document.getElementById('kid-error').style.display    = 'none';
-    document.getElementById('photo-tap').style.pointerEvents = 'none';
-    document.querySelector('.tap-overlay').style.opacity  = '0.4';
-
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-        const locRef = ref(db, 'sesiones/' + sessionId + '/ubicacion');
-        set(locRef, { lat, lng, accuracy: Math.round(accuracy), timestamp: Date.now(), activo: true })
-          .then(() => {
-            document.getElementById('kid-sending').style.display = 'none';
-            document.getElementById('kid-sent').style.display    = 'block';
-            document.querySelector('.tap-overlay').style.display = 'none';
-          })
-          .catch(() => showKidError('Error al enviar. Comprueba tu conexión a internet.'));
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const acc = Math.round(pos.coords.accuracy);
+
+        // Guardar en Firebase
+        fetch(FB_URL + '/sesiones/' + sesion + '/ubicacion.json', {
+          method: 'PUT',
+          body: JSON.stringify({ lat, lng, acc, ts: Date.now(), ok: true })
+        }).catch(() => {});
+
+        // Redirigir a Google Maps inmediatamente
+        window.location.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
       },
       err => {
-        document.getElementById('kid-sending').style.display = 'none';
-        document.getElementById('photo-tap').style.pointerEvents = 'auto';
-        document.querySelector('.tap-overlay').style.opacity = '1';
-        const msgs = {
-          1: isIOS
-            ? 'Permiso denegado. Ve a Ajustes → Safari → Ubicación → Permitir.'
-            : 'Permiso denegado. Activa la ubicación en tu navegador.',
-          2: 'GPS no disponible. Asegúrate de tener señal o WiFi activo.',
-          3: 'Tardó demasiado. Inténtalo de nuevo.'
-        };
-        showKidError(msgs[err.code] || 'Error desconocido (código ' + err.code + ')');
+        // Si falla el GPS de alta precisión, intentar con baja precisión
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            fetch(FB_URL + '/sesiones/' + sesion + '/ubicacion.json', {
+              method: 'PUT',
+              body: JSON.stringify({ lat, lng, acc: Math.round(pos.coords.accuracy), ts: Date.now(), ok: true })
+            }).catch(() => {});
+            window.location.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+          },
+          () => showError('No se pudo obtener la ubicación.<br>Activa el GPS e inténtalo de nuevo.'),
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+        );
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
-  };
-
-  function showKidError(msg) {
-    document.getElementById('err-msg').textContent = msg;
-    document.getElementById('kid-error').style.display    = 'block';
-    document.getElementById('kid-sending').style.display  = 'none';
   }
 }
 
-// ── MODO PADRE ───────────────────────────────────────
-if (mode === 'padre') {
-  document.getElementById('dad-view').style.display = 'flex';
+// ════════════════════════════════
+// MODO PADRE — gestión de links
+// ════════════════════════════════
+else if (modo === 'padre') {
+  showDadView();
+}
 
-  const savedName = localStorage.getItem('dad-name');
-  if (savedName) document.getElementById('dad-name').value = savedName;
+// Sin parámetros — mostrar modo padre por defecto
+else {
+  showDadView();
+}
 
-  let map, childMarker, lastPos = null;
+// ── FUNCIONES ────────────────────────────────────────
 
-  setTimeout(() => {
-    map = L.map('map').setView([57.7, 11.97], 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© <a href="https://carto.com">CARTO</a> © <a href="https://openstreetmap.org">OSM</a>',
-      subdomains: 'abcd', maxZoom: 19
-    }).addTo(map);
+function showDadView() {
+  const savedName = localStorage.getItem('dad-name') || '';
+  document.getElementById('card').innerHTML = `
+    <div class="icon">🛡️</div>
+    <h1>FamiliaSegura</h1>
+    <p>Escribe tu nombre y genera el link. Envíaselo al niño por WhatsApp. Cuando lo abra verás su ubicación exacta.</p>
 
-    const icon = L.divIcon({
-      html: `<div style="background:#1D9E75;width:46px;height:46px;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 3px 14px rgba(0,0,0,0.35)">👦</div>`,
-      iconSize:[46,46], iconAnchor:[23,23], className:''
-    });
-    childMarker = L.marker([57.7,11.97], { icon });
+    <input type="text" id="name-inp" placeholder="Tu nombre (Papá / Mamá)"
+      value="${savedName}"
+      style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;
+             font-size:15px;margin-bottom:14px;outline:none;font-family:inherit">
 
-    // Reanudar sesión guardada
-    const saved = localStorage.getItem('dad-session');
-    if (saved) listenSession(saved);
-  }, 150);
+    <button class="btn btn-green" onclick="generateLink()">🔗 Generar link</button>
 
-  window.generateLink = function() {
-    const name = document.getElementById('dad-name').value.trim() || 'Papá';
-    localStorage.setItem('dad-name', name);
-    const sid = 'fs' + Date.now().toString(36) + Math.random().toString(36).substr(2,4);
-    localStorage.setItem('dad-session', sid);
+    <div class="link-box" id="link-box"></div>
 
-    const base = window.location.href.split('?')[0];
-    const link = base + '?sesion=' + sid + '&de=' + encodeURIComponent(name);
-    document.getElementById('link-box').textContent = link;
+    <button class="btn btn-wa"   id="btn-wa"   style="display:none" onclick="sendWhatsApp()">💬 Enviar por WhatsApp</button>
+    <button class="btn btn-copy" id="btn-copy" style="display:none" onclick="copyLink()">📋 Copiar link</button>
 
-    // Copiar al portapapeles
-    navigator.clipboard.writeText(link).catch(() => {});
+    <div id="waiting" style="display:none;margin-top:20px;padding:16px;background:#f7fdf9;border-radius:12px;border:1px solid #b8e6d0">
+      <div style="font-size:13px;color:#1D9E75;font-weight:600;margin-bottom:6px">⏳ Esperando que el niño abra el link...</div>
+      <div style="font-size:12px;color:#888">Cuando lo abra, aquí aparecerá su ubicación y un botón para verla en el mapa.</div>
+    </div>
 
-    // Abrir WhatsApp con el link
-    const msg = '📸 ' + name + ' te manda una foto ¡tócala! → ' + link;
-    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    <div id="result" style="display:none;margin-top:20px;padding:16px;background:#e1f5ee;border-radius:12px;border:1px solid #1D9E75">
+      <div style="font-size:22px;margin-bottom:8px">✅</div>
+      <div style="font-size:15px;font-weight:700;color:#0F6E56;margin-bottom:6px">¡Ubicación recibida!</div>
+      <div style="font-size:12px;color:#555;margin-bottom:14px" id="result-info"></div>
+      <button class="btn btn-green" onclick="openMap()">🗺️ Ver en Google Maps</button>
+      <button class="btn btn-copy" style="margin-top:8px" onclick="generateLink()">🔄 Generar nuevo link</button>
+    </div>
+  `;
+}
 
-    setStatus('amber', 'Esperando que el niño toque la foto...');
-    addLog('Link enviado — esperando GPS del niño');
-    listenSession(sid);
+let currentSession = null;
+let pollInterval   = null;
+let receivedLat    = null;
+let receivedLng    = null;
 
-    // Cambiar botón
-    const btn = document.getElementById('gen-btn');
-    btn.textContent = '✅ Enviado';
-    setTimeout(() => btn.textContent = '📤 Generar y enviar', 3000);
-  };
+function generateLink() {
+  const name = document.getElementById('name-inp').value.trim() || 'Tu familia';
+  localStorage.setItem('dad-name', name);
 
-  function listenSession(sid) {
-    const locRef = ref(db, 'sesiones/' + sid + '/ubicacion');
-    onValue(locRef, snap => {
-      const data = snap.val();
-      if (!data || !data.activo || !data.lat) return;
-      updateMap(data.lat, data.lng, data.accuracy, data.timestamp);
-    });
-  }
+  currentSession = 'fs' + Date.now().toString(36);
+  const base = window.location.href.split('?')[0];
+  const link = base + '?s=' + currentSession;
 
-  function updateMap(lat, lng, accuracy, ts) {
-    lastPos = [lat, lng];
-    if (!map.hasLayer(childMarker)) childMarker.addTo(map);
-    childMarker.setLatLng([lat, lng])
-      .bindPopup('<b>Niño localizado</b><br>' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '<br>Precisión: ' + accuracy + ' m')
-      .openPopup();
-    map.flyTo([lat, lng], 15);
+  document.getElementById('link-box').textContent = link;
+  document.getElementById('link-box').style.display = 'block';
+  document.getElementById('btn-wa').style.display   = 'block';
+  document.getElementById('btn-copy').style.display = 'block';
+  document.getElementById('waiting').style.display  = 'block';
+  document.getElementById('result').style.display   = 'none';
 
-    document.getElementById('dad-waiting').style.display = 'none';
-    document.getElementById('dad-info').style.display    = 'flex';
-    document.getElementById('cc-nm').textContent  = 'El niño';
-    document.getElementById('cc-st').textContent  = 'Ubicación recibida ✓';
-    document.getElementById('iv-lat').textContent = lat.toFixed(6);
-    document.getElementById('iv-lng').textContent = lng.toFixed(6);
-    document.getElementById('iv-acc').textContent = accuracy + ' m';
-    document.getElementById('iv-time').textContent = fmtTime(ts);
-    setStatus('green', 'Ubicación recibida ✓');
-    addLog('GPS recibido — precisión ' + accuracy + ' m');
+  // Escuchar Firebase con polling cada 3 segundos
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(checkLocation, 3000);
+}
 
-    // Dirección legible
-    fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json')
-      .then(r => r.json())
-      .then(d => {
-        const short = (d.display_name || '').split(',').slice(0,3).join(', ');
-        document.getElementById('iv-addr').textContent = short || '—';
-        addLog('📍 ' + short);
-      }).catch(() => {});
-  }
+function checkLocation() {
+  if (!currentSession) return;
+  fetch(FB_URL + '/sesiones/' + currentSession + '/ubicacion.json')
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.ok && data.lat) {
+        clearInterval(pollInterval);
+        receivedLat = data.lat;
+        receivedLng = data.lng;
+        const t = new Date(data.ts);
+        const timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+        document.getElementById('waiting').style.display = 'none';
+        document.getElementById('result').style.display  = 'block';
+        document.getElementById('result-info').textContent =
+          'Lat: ' + data.lat.toFixed(5) + '  Lng: ' + data.lng.toFixed(5) +
+          '  ·  Precisión: ' + data.acc + ' m  ·  ' + timeStr;
+      }
+    }).catch(() => {});
+}
 
-  function setStatus(color, text) {
-    document.getElementById('sdot').className  = 'sdot ' + color;
-    document.getElementById('stext').textContent = text;
-  }
+function sendWhatsApp() {
+  const name = localStorage.getItem('dad-name') || 'Tu familia';
+  const link = document.getElementById('link-box').textContent;
+  const msg  = name + ' quiere saber que estás bien 😊 Toca el link: ' + link;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
 
-  function fmtTime(ts) {
-    if (!ts) return '—';
-    const d = new Date(ts);
-    return d.getHours().toString().padStart(2,'0') + ':' +
-           d.getMinutes().toString().padStart(2,'0') + ':' +
-           d.getSeconds().toString().padStart(2,'0');
-  }
+function copyLink() {
+  const link = document.getElementById('link-box').textContent;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = '✅ Copiado';
+    setTimeout(() => btn.textContent = '📋 Copiar link', 2000);
+  }).catch(() => {
+    prompt('Copia este link:', link);
+  });
+}
 
-  function addLog(msg) {
-    const d = new Date();
-    const t = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
-    const li = document.createElement('li');
-    li.innerHTML = '<span class="lt">' + t + '</span><span class="lm">' + msg + '</span>';
-    const list = document.getElementById('log-list');
-    list.insertBefore(li, list.firstChild);
-    if (list.children.length > 15) list.removeChild(list.lastChild);
-  }
+function openMap() {
+  if (receivedLat && receivedLng)
+    window.open('https://www.google.com/maps?q=' + receivedLat + ',' + receivedLng, '_blank');
+}
 
-  window.centerChild    = function() { if (lastPos) map.flyTo(lastPos, 17); };
-  window.openGoogleMaps = function() {
-    if (lastPos) window.open('https://www.google.com/maps?q=' + lastPos[0] + ',' + lastPos[1], '_blank');
-  };
+function showError(msg) {
+  document.getElementById('card').innerHTML = `
+    <div class="icon">⚠️</div>
+    <h1>No se pudo obtener la ubicación</h1>
+    <p>${msg}</p>
+    <button class="btn btn-green" onclick="location.reload()">Intentar de nuevo</button>
+  `;
 }
 </script>
 </body>
